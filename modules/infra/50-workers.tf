@@ -107,6 +107,6 @@ resource "hcloud_rdns" "rdns_worker" {
 }
 
 # Get Node Public IPv4
-output "public_ip4_worker" {
+output "worker_ipv4" {
   value = "${hcloud_server.swarm_worker.*.ipv4_address}"
 }

@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -eu
+
+# Check requirements.
+command -v sed >/dev/null 2>&1 || { echo >&2 "I require sed but it's not installed.  Aborting."; exit 1; }
+command -v terraform >/dev/null 2>&1 || { echo >&2 "I require terraform but it's not installed.  Aborting."; exit 1; }
+command -v terragrunt >/dev/null 2>&1 || { echo >&2 "I require terragrunt but it's not installed.  Aborting."; exit 1; }
+pwd=$(pwd)
+
+# Load Secrets, if exists.
+if [ -f "$pwd/.secrets" ]; then
+  source "$pwd/.secrets"
+fi
+
+# Check if secrets are present.
+if [ -z ${TF_VAR_hcloud_token+x} ]; then 
+  read -p 'Hetzner API Token: ' hcloudTK
+  export TF_VAR_hcloud_token="$hcloudTK"
+fi
+
+# Check if env is set.
+if [ -z ${GT_env+x} ]; then
+  read -p 'Env: ' hcloudEnv
+  if ! [[ "$hcloudEnv" =~ ^(prod|stage)$ ]]; then
+    echo 'Invalid env! Available: prod, stage.'
+    exit 1
+  fi
+  export GT_env="$hcloudEnv"  
+fi
+
+# Save into local secret file.
+if [ ! -f "$pwd/.secrets" ]; then
+  echo "export TF_VAR_hcloud_token=${hcloudTK}" > "$pwd/.secrets"
+  echo "export GT_env=${hcloudEnv}" >> "$pwd/.secrets"
+fi
+
+# If no command given, cancel.
+if [[ ${1-help} == "help" ]]; then
+  cat << EOF
+  List of available commands:
+  
+  apply-all  - Apply-All currently selected env. (No help page)
+  clear      - Cleanup all set secrets. (No help page)
+  dump       - Show current secrets. (No help page)
+  env        - Change environment.
+  set        - Set secrets from current env.
+  tg         - Run TerraGrunt (Use it like you would use TerraForm)
+  unset      - Unsets secret from current env.
+
+  See command specific help: ./console <command> help
+EOF
+  exit 0
+fi
+
+# Apply-All. Apply all modules to currently selected env.
+if [[ $1 == "apply-all" ]]; then
+  cd "$pwd/envs/$GT_env"
+  terragrunt apply-all --terragrunt-non-interactive
+  returnCode=$?
+  cd "$pwd"
+  exit $returnCode
+fi
+
+# Clear. Remove the secrets file.
+if [[ $1 == "clear" ]]; then
+  rm "$pwd/.secrets"
+  echo "Secrets cleared!"
+  exit 0
+fi
+
+# Destroy-All. Destroy all modules from currently selected env.
+if [[ $1 == "destroy-all" ]]; then
+  cd "$pwd/envs/$GT_env"
+  terragrunt destroy-all --terragrunt-non-interactive
+  returnCode=$?
+  cd "$pwd"
+  exit $returnCode
+fi
+
+# Env. Change env.
+if [[ $1 == "env" ]]; then
+
+  # Show help for env command.
+  if [[ ${2-help} == "help" ]]; then
+    cat << EOF
+    Set current processing env.
+
+    Example usage: ./console env <prod|stage>
+EOF
+    exit 0
+  fi
+
+  # If no env given as value, ask for it.
+  if [[ ${2-} == "" ]]; then
+    read -p 'Enter new env: ' hcloudEnv
+  else
+    hcloudEnv=$2
+  fi
+
+  # Validate env
+  if ! [[ "$hcloudEnv" =~ ^(prod|stage)$ ]]; then
+    echo 'Invalid env! Available: prod, stage.'
+    exit 1
+  fi
+
+  # Change env and persist
+  export GT_env="$hcloudEnv"
+  grep -v "^export GT_env=" "$pwd/.secrets" > "$pwd/.secrets.new"
+  mv "$pwd/.secrets.new" "$pwd/.secrets"
+  echo "export GT_env=${hcloudEnv}" >> "$pwd/.secrets"
+  exit 0
+fi
+
+# Dump. Dump current set secrets.
+if [[ $1 == "dump" ]]; then
+  echo "Current secrets: "
+  cat "$pwd/.secrets" | sed "s/export //" | sed "s/TF_VAR_//"
+  exit 0
+fi
+
+# Set. Used to set secrets.
+if [[ $1 == "set" ]]; then
+  # Show help for set command.
+  if [[ ${2-help} == "help" || ${3-} == "" ]]; then
+    cat << EOF
+    Set variable for Terraform.
+
+    Example usage: ./console set <variable> <value>
+EOF
+    exit 0
+  fi
+
+  # Set variable into secrets file.
+  echo "export TF_VAR_${2}=${3}" >> "$pwd/.secrets"
+  echo "Set $2 to $3!"
+  exit 0
+fi
+
+# tg. Terragrunt. Just pass command in correct directory to the tg.
+if [[ $1 == "tg" ]]; then
+  terragrunt "${@:2}"
+  exit $?
+fi
+
+# Unset. Used to unset secrets.
+if [[ $1 == "unset" ]]; then
+  # Show help for unset command.
+  if [[ ${2-help} == "help" || ${2-} == "" ]]; then
+    cat << EOF
+    Unset variable for Terraform.
+
+    Example usage: ./console unset <variable>
+EOF
+    exit 0
+  fi
+
+  # Remove variable from secrets.
+  grep -v "^export TF_VAR_${2}=" "$pwd/.secrets" > "$pwd/.secrets.new"
+  mv "$pwd/.secrets.new" "$pwd/.secrets"
+  echo "Removed $2 from secrets!"
+  exit 0
+fi
+
+echo "Command not found!"
+exit 1

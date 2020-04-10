@@ -1,7 +1,6 @@
 # Configuration Variables
 variable "hcloud_token" {
   description = "This token is from Hetzner management panel."
-  default = ""
 }
 
 variable "hcloud_user_sshkey_name" {
@@ -38,4 +37,3 @@ variable "gt_cluster" {
   description = "Cluster subdomain. Example: service.gt_cluster.gt_domain."
   default = "eu"
 }
-
