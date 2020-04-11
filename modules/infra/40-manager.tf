@@ -48,5 +48,5 @@ resource "hcloud_rdns" "rdns_manager" {
 
 # Get IPv4
 output "manager_ipv4" {
-  value = "${hcloud_server.swarm_manager.*.ipv4_address}"
+  value = "${hcloud_server.swarm_manager.0.ipv4_address}"
 }
