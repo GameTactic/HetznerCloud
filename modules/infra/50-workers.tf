@@ -72,8 +72,8 @@ resource "hcloud_server" "swarm_worker" {
 data "external" "swarm_tokens" {
   program = [ "./scripts/swarm_tokens.sh" ]
   query = {
-    # The Manager Node IP should always be same, if accessed via private network.
-    host = hcloud_server.swarm_manager.0.ipv4_address
+    # The Manager Node IP should always be same, if accessed via private network.\
+    host = "${hcloud_server.swarm_manager.0.ipv4_address}"
   }
   depends_on = [ hcloud_server.swarm_manager ]
 }
@@ -104,9 +104,4 @@ resource "hcloud_rdns" "rdns_worker" {
   server_id = hcloud_server.swarm_worker[count.index].id
   ip_address = hcloud_server.swarm_worker[count.index].ipv4_address
   dns_ptr = hcloud_server.swarm_worker[count.index].name
-}
-
-# Get Node Public IPv4
-output "worker_ipv4" {
-  value = "${hcloud_server.swarm_worker.*.ipv4_address}"
 }

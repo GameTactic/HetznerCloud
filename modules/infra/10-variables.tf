@@ -20,7 +20,7 @@ variable "hcloud_worker" {
 
 variable "hcloud_manager" {
   description = "Server package. Affects pricing."
-  default = "cx11"
+  default = "cx11-ceph"
 }
 
 variable "hcloud_worker_count" {

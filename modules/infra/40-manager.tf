@@ -40,13 +40,7 @@ resource "hcloud_server_network" "swarm_manager_network" {
 
 # Update ReverseDNS according to the hostname
 resource "hcloud_rdns" "rdns_manager" {
-  count = length(hcloud_server.swarm_manager)
-  server_id = hcloud_server.swarm_manager[count.index].id
-  ip_address = hcloud_server.swarm_manager[count.index].ipv4_address
-  dns_ptr = hcloud_server.swarm_manager[count.index].name
-}
-
-# Get IPv4
-output "manager_ipv4" {
-  value = "${hcloud_server.swarm_manager.0.ipv4_address}"
+  server_id = hcloud_server.swarm_manager.0.id
+  ip_address = hcloud_server.swarm_manager.0.ipv4_address
+  dns_ptr = hcloud_server.swarm_manager.0.name
 }

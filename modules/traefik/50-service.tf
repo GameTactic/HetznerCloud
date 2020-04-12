@@ -6,7 +6,7 @@ resource "docker_service" "traefik" {
   task_spec {
     container_spec {
       # Image to run Service
-      image = "traefik:v2.1.4"
+      image = "traefik:v2.1.9"
 
       # Traefik v2 is configured mainly via command.
       command = [
@@ -40,7 +40,7 @@ resource "docker_service" "traefik" {
       labels {
         # Api Entrypoint via lb.cluster.domain.
         label = "traefik.http.routers.api.rule"
-        value = "Host(`lb.eu.gametactic.eu`)"
+        value = "Host(`lb.${var.swarm_fqdn}`)"
       }
 
       labels {

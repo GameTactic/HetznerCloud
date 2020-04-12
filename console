@@ -12,10 +12,16 @@ if [ -f "$pwd/.secrets" ]; then
   source "$pwd/.secrets"
 fi
 
-# Check if secrets are present.
+# Check if Hetzner API key is present.
 if [ -z ${TF_VAR_hcloud_token+x} ]; then 
   read -p 'Hetzner API Token: ' hcloudTK
   export TF_VAR_hcloud_token="$hcloudTK"
+fi
+
+# Check if acme email is present.
+if [ -z ${TF_VAR_acme_email+x} ]; then 
+  read -p 'Acme Email: ' acmeEmail
+  export TF_VAR_acme_email="$acmeEmail"
 fi
 
 # Check if env is set.
@@ -46,6 +52,7 @@ if [[ ${1-help} == "help" ]]; then
   set        - Set secrets from current env.
   tg         - Run TerraGrunt (Use it like you would use TerraForm)
   unset      - Unsets secret from current env.
+  reset      - Reset local state. (No help page)
 
   See command specific help: ./console <command> help
 EOF
@@ -138,8 +145,11 @@ fi
 
 # tg. Terragrunt. Just pass command in correct directory to the tg.
 if [[ $1 == "tg" ]]; then
+  cd "$pwd/envs/$GT_env"
   terragrunt "${@:2}"
-  exit $?
+  returnCode=$?
+  cd "$pwd"
+  exit $returnCode
 fi
 
 # Unset. Used to unset secrets.
@@ -159,6 +169,18 @@ EOF
   mv "$pwd/.secrets.new" "$pwd/.secrets"
   echo "Removed $2 from secrets!"
   exit 0
+fi
+
+# Reset. Remove local state.
+if [[ $1 == "" ]]
+  while true; do
+    read -p "Do you wish reset local state (Cannot be reversed!)?" yn
+    case $yn in
+      [Yy]* ) rm envs/prod/*/.terragrunt-cache/ -rf; exit;;
+      [Nn]* ) exit;;
+      * ) echo "Please answer yes or no.";;
+    esac
+  done
 fi
 
 echo "Command not found!"
