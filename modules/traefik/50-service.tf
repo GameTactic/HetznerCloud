@@ -105,7 +105,7 @@ resource "docker_service" "traefik" {
       }
 
       # lb = loadbalancer. Example result: lb.eu.gametactic.eu.
-      hostname = "lb.eu.gametactic.eu"
+      hostname = "lb.${var.swarm_fqdn}"
 
       # Mounts configuration
       mounts {
