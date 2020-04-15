@@ -3,6 +3,86 @@
 resource "docker_service" "traefik" {
   name = "traefik"
 
+  # Rest of it is configured via Labels.
+  labels {
+    # Unleash the Traefik
+    label = "traefik.enable"
+    value = "true"
+  }
+
+  labels {
+    # Api Entrypoint Https Only
+    label = "traefik.http.routers.api.entrypoints"
+    value = "websecure"
+  }
+
+  labels {
+    # Api Entrypoint via lb.cluster.domain.
+    label = "traefik.http.routers.api.rule"
+    value = "Host(`lb.${var.swarm_fqdn}`)"
+  }
+
+  labels {
+    # Api Service to use.
+    label = "traefik.http.routers.api.service"
+    value = "api@internal"
+  }
+
+  labels {
+    # https://stackoverflow.com/questions/58580782/traefik-2-0-port-is-missing-for-internal-dashboard
+    label = "traefik.http.services.justAdummyService.loadbalancer.server.port"
+    value = "1337"
+  }
+
+  labels {
+    # Authentication Middleware for API
+    label = "traefik.http.routers.api.middlewares"
+    value = "auth-dash"
+  }
+
+  #labels {
+    # Authentication credentials for Traefik Dashboard
+    # TODO!
+  #  label = "traefik.http.middlewares.auth-dash.basicauth.user"
+  #  value = ""
+  #}
+
+  labels {
+    # Use Let's Encrypt for API Cert
+    label = "traefik.http.routers.api.tls.certresolver"
+    value = "le"
+  }
+
+  labels {
+    # Redirect http to https.
+    label = "traefik.http.routers.http-catchall.middlewares"
+    value = "redirect-to-https@docker"
+  }
+
+  labels {
+    # Regex to catch http calls to be redirected to https.
+    label = "traefik.http.routers.http-catchall.rule"
+    value = "hostregexp(`{host:.+}`)"
+  }
+
+  labels {
+    # Entrypoints to catch for https redirection.
+    label = "traefik.http.routers.http-catchall.entrypoints"
+    value = "web"
+  }
+
+  labels {
+    # Enable redirect middleware
+    label = "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme"
+    value = "https"
+  }
+
+  labels {
+    # API HTTPS
+    label = "traefik.http.routers.api.tls"
+    value = "true"
+  }
+
   task_spec {
     container_spec {
       # Image to run Service
@@ -22,87 +102,8 @@ resource "docker_service" "traefik" {
         "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web",
         "--certificatesresolvers.le.acme.email=acme@gametactic.eu",
         "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json",
+        "--log.level=DEBUG"
       ]
-
-      # Rest of it is configured via Labels.
-      labels {
-        # Unleash the Traefik
-        label = "traefik.enable"
-        value = "true"
-      }
-
-      labels {
-        # Api Entrypoint Https Only
-        label = "traefik.http.routers.api.entrypoints"
-        value = "websecure"
-      }
-
-      labels {
-        # Api Entrypoint via lb.cluster.domain.
-        label = "traefik.http.routers.api.rule"
-        value = "Host(`lb.${var.swarm_fqdn}`)"
-      }
-
-      labels {
-        # Api Service to use.
-        label = "traefik.http.routers.api.service"
-        value = "api@internal"
-      }
-
-      labels {
-        # https://stackoverflow.com/questions/58580782/traefik-2-0-port-is-missing-for-internal-dashboard
-        label = "traefik.http.services.justAdummyService.loadbalancer.server.port"
-        value = "1337"
-      }
-
-      labels {
-        # Authentication Middleware for API
-        label = "traefik.http.routers.api.middlewares"
-        value = "auth-dash"
-      }
-
-      labels {
-        # Authentication credentials for Traefik Dashboard
-        # TODO!
-        label = "traefik.http.middlewares.auth-dash.basicauth.user"
-        value = ""
-      }
-
-      labels {
-        # Use Let's Encrypt for API Cert
-        label = "traefik.http.routers.api.tls.certresolver"
-        value = "le"
-      }
-
-      labels {
-        # Redirect http to https.
-        label = "traefik.http.routers.http-catchall.middlewares"
-        value = "redirect-to-https@docker"
-      }
-
-      labels {
-        # Regex to catch http calls to be redirected to https.
-        label = "traefik.http.routers.http-catchall.rule"
-        value = "hostregexp(`{host:.+}`)"
-      }
-
-      labels {
-        # Entrypoints to catch for https redirection.
-        label = "traefik.http.routers.http-catchall.entrypoints"
-        value = "web"
-      }
-
-      labels {
-        # Enable redirect middleware
-        label = "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme"
-        value = "https"
-      }
-
-      labels {
-        # API HTTPS
-        label = "traefik.http.routers.api.tls"
-        value = "true"
-      }
 
       # lb = loadbalancer. Example result: lb.eu.gametactic.eu.
       hostname = "lb.${var.swarm_fqdn}"
