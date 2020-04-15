@@ -55,7 +55,7 @@ resource "docker_service" "room" {
   task_spec {
     container_spec {
       # Image to run Service
-      image = "registry.gitlab.com/gametactic/room:develop"
+      image = docker_image.gt_room.latest
 
       # Hostname. Example result: room.eu.gametactic.eu.
       hostname = "room.${var.swarm_fqdn}"

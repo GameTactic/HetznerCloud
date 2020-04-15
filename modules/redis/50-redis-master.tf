@@ -6,7 +6,7 @@ resource "docker_service" "redis_master" {
   task_spec {
     container_spec {
       # Image to run Service
-      image = "bitnami/redis:latest"
+      image = docker_image.redis_server.latest
 
       env = {
         ALLOW_EMPTY_PASSWORD = "yes"

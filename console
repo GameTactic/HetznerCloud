@@ -172,13 +172,13 @@ EOF
 fi
 
 # Reset. Remove local state.
-if [[ $1 == "" ]]
+if [[ $1 == "reset" ]]; then
   while true; do
-    read -p "Do you wish reset local state (Cannot be reversed!)?" yn
+    read -p "Do you wish reset local state (Cannot be reversed!)? [yN]: " yn
     case $yn in
       [Yy]* ) rm envs/prod/*/.terragrunt-cache/ -rf; exit;;
       [Nn]* ) exit;;
-      * ) echo "Please answer yes or no.";;
+      * ) exit;;
     esac
   done
 fi

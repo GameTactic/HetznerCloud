@@ -6,7 +6,7 @@ resource "docker_service" "sentinel" {
   task_spec {
     container_spec {
       # Image to run Service
-      image = "bitnami/redis-sentinel:latest"
+      image = docker_image.redis_sentinel.latest
 
       # Example result: sentinel.eu.gametactic.eu.
       hostname = "sentinel.${var.swarm_fqdn}"

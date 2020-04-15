@@ -86,7 +86,7 @@ resource "docker_service" "traefik" {
   task_spec {
     container_spec {
       # Image to run Service
-      image = "traefik:v2.1.9"
+      image = docker_image.traefik.latest
 
       # Traefik v2 is configured mainly via command.
       command = [
